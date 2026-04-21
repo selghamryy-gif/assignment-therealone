@@ -1,110 +1,185 @@
-// Convert the string "123" to a number and add 7
-let result = Number("123") + 7;
-console.log(result); // 130
+
+//1. Use a readable stream to read a file in chunks and log each chunk. (0.5 Grade)
+const fs = require("fs");
+
+const readableStream = fs.createReadStream("big.txt", {
+  encoding: "utf8",
+  highWaterMark: 64,
+});
+
+readableStream.on("data", (chunk) => {
+  console.log("New chunk received:");
+  console.log(chunk);
+});
+
+readableStream.on("end", () => {
+  console.log("File reading finished!");
+});
 
 
-//Check if the given variable is falsy and return "Invalid" if it is.
-function checkFalsy(value) {
-  return !value ? "Invalid" : value;
-}
-console.log(checkFalsy(0)); // "Invalid"
+//2. Use readable and writable streams to copy content from one file to another.
+const fs = require("fs");
+fs.writeFileSync("source.txt", "Hello this is the source file content!");
+const sourceReadStream = fs.createReadStream("source.txt");
 
-//Use for loop to print all numbers between 1 and 10, skipping even numbers using continue
-for (let i = 1 ; i <= 10 ; i++)
-{
-  if (i % 2 === 0) continue;
-  console.log(i);
-}
+const writeStream = fs.createWriteStream("dest.txt");
+sourceReadStream.pipe(writeStream);
+
+writeStream.on("finish", () => {
+  console.log("File copied successfully using streams");
+});
+//3. Create a pipeline that reads a file, compresses it, and writes it to another file.
+
+const fs = require("fs");
+const zlib = require("zlib");
+
+const dataReadStream = fs.createReadStream("data.txt");
+const gzipStream = zlib.createGzip();
+const gzipWriteStream = fs.createWriteStream("data.txt.gz");
+
+dataReadStream.pipe(gzipStream).pipe(gzipWriteStream);
+
+gzipWriteStream.on("finish", () => {
+  console.log("File compressed and saved to data.txt.gz!");
+});
 
 
-//Create an array of numbers and return only the even numbers using filter method.
-let array = [1,2,3,4,5,6,7,8,9,10];
-let even = array.filter (num => num % 2 === 0);
-console.log(even);
+//Part2: Simple CRUD Operations Using HTTP (
+const http = require("http");
+const fs = require("fs");
 
+const server = http.createServer((req, res) => {
+  const url = req.url;
+  const method = req.method;
 
-//Use the spread operator to merge two arrays, then return the merged array.
-let arr1 =[1,2,3,4]
-let arr2 =[5,6,7,8]
-let merged = [...arr1, ...arr2];
-console.log(merged);
+  // GET all users
+  if (method === "GET" && url === "/user") {
+    const data = fs.readFileSync("users.json", "utf8");
+    const users = JSON.parse(data);
 
-//Use a switch statement to return the day of the week given a number
-function getDay(num) {
-    switch(num) {
-      case 1: return "Monday";              
-        case 2: return "Tuesday";
-        case 3: return "Wednesday";
-        case 4: return "Thursday";
-        case 5: return "Friday";
-        case 6: return "Saturday";
-        case 7: return "Sunday";
-        default: return "Invalid";
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(users));
+  }
+
+  // GET user by ID
+  else if (method === "GET" && url.startsWith("/user/")) {
+    const id = Number(url.split("/")[2]);
+    const data = fs.readFileSync("users.json", "utf8");
+    const users = JSON.parse(data);
+
+    const user = users.find((u) => u.id === id);
+
+    if (!user) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "User not found." }));
+    } else {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(user));
     }
   }
-  console.log(getDay(5)); // "Friday"
 
-//Create an array of strings and return their lengths using map method
-let strings = ["apple", "banana", "cherry"];
-let lengths = strings.map(str => str.length);
-console.log(lengths); 
+  // post /user
+  else if (method === "POST" && url === "/user") {
+    let body = "";
 
-
-//Write a function that checks if a number is divisible by 3 and 5.
-function isDivisible(num) {
-  return num % 3 === 0 && num % 5 === 0;
-}
-
-console.log(isDivisible(15)); // true
-console.log(isDivisible(10)); // false
-
-
-//Write a function using arrow syntax to return the square of a number
-const square = num => num * num;
-console.log(square(5)); // 25
-console.log(square(9)); // 81
-
-
-//Write a function that destructures an object to extract values and returns a formatted string.
-function formatPerson({name, age, city}) {
-    return `${name} is ${age} years old and lives in ${city}.`;
-    }
-
-const person = {name: "John", age: 30, city: "New York"};
-console.log(formatPerson(person));   // "John is 30 years old and lives in New York."
-
-
-
-//11.Write a function that accepts multiple parameters (two or more) and returns their sum.
-function sum(...nums) {
-    return nums.reduce((a, b) => a + b, 0);
-    }
-    console.log(sum(1, 2, 3, 4)); // 10
-
-//Promise that resolves after 3 seconds
-function delayThreeSeconds() {
-    return new Promise(resolve => {
-    setTimeout(() => {
-    resolve("Resolved after 3 seconds");
-    }, 3000);
+    req.on("data", (chunk) => {
+      body += chunk;
     });
-    }
-    delayThreeSeconds().then(result => console.log(result));
 
-//Find largest number in array
-function findLargest(arr) {
-    return Math.max(...arr);
-    }
-    console.log(findLargest([1, 2, 3, 4, 5]));
+    req.on("end", () => {
+      const { name, age, email } = JSON.parse(body);
 
-//Return only keys of an object
-function getObjectKeys(obj) {
-    return Object.keys(obj);
-    }
-    console.log(getObjectKeys({a: 1, b: 2, c: 3}));
+      const data = fs.readFileSync("users.json", "utf8");
+      const users = JSON.parse(data);
 
-//. Split a string into array of words
-function splitString(str) {
-    return str.split(" ");
+      const emailExists = users.find((u) => u.email === email);
+
+      if (emailExists) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "Email already exists." }));
+      } else {
+        const newUser = {
+          id: users.length + 1,
+          name: name,
+          age: age,
+          email: email,
+        };
+
+        users.push(newUser);
+        fs.writeFileSync("users.json", JSON.stringify(users, null, 2));
+
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "User added successfully." }));
+      }
+    });
+  }
+
+  // patch /user/id 
+  else if (method === "PATCH" && url.startsWith("/user/")) {
+    const id = Number(url.split("/")[2]);
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      const data = fs.readFileSync("users.json", "utf8");
+      const users = JSON.parse(data);
+
+      const index = users.findIndex((u) => u.id === id);
+
+      if (index === -1) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "User ID not found." }));
+      } else {
+        const updates = JSON.parse(body);
+
+        if (updates.name) users[index].name = updates.name;
+        if (updates.age) users[index].age = updates.age;
+        if (updates.email) users[index].email = updates.email;
+
+        fs.writeFileSync("users.json", JSON.stringify(users, null, 2));
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "User updated successfully." }));
+      }
+    });
+  }
+
+  // delete/ user/id
+  else if (method === "DELETE" && url.startsWith("/user/")) {
+    const id = Number(url.split("/")[2]);
+
+    const data = fs.readFileSync("users.json", "utf8");
+    const users = JSON.parse(data);
+
+    const index = users.findIndex((u) => u.id === id);
+
+    if (index === -1) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "User ID not found." }));
+    } else {
+      users.splice(index, 1);
+      fs.writeFileSync("users.json", JSON.stringify(users, null, 2));
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "User deleted successfully." }));
     }
-    console.log(splitString("Hello world"));
+  }
+});
+
+server.listen(3000, () => {
+  console.log("Server is running on port 3000");
+});
+
+//1. Event Loop It is like a loop that Node.js use to keep checking tasks. When the call stack is empty it takes callbacks and run them.
+
+//2- Libuv is a  library that Node depends on. It handle async stuff like file system, thread pool and event loop.
+
+//3. Async,Node don’t run async tasks directly, it send them to Libuv or system. After finish, result go to a queue then event loop take it and run callback.
+//4. Call stack / Event queue / Event loop
+
+// Call stack: where functions run
+// Event queue: store waiting callbacks
+// Event loop: move callback from queue to stack when stack is free
